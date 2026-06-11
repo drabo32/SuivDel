@@ -1,29 +1,22 @@
 import csv
 import io
+import logging
 import re
 from datetime import date, timedelta, datetime
 from sqlalchemy.orm import Session
 from models import Evolution, EtapeCycleVie
+from services.utils import decoder as _decoder
+
+logger = logging.getLogger(__name__)
 
 CODE_AHA_RE = re.compile(r'^[A-Z]+-E-\d+$')
 
 
-def _decoder(content: bytes) -> str:
-    for encoding in ("utf-8-sig", "utf-8", "latin-1", "cp1252"):
-        try:
-            return content.decode(encoding)
-        except UnicodeDecodeError:
-            continue
-    return content.decode("latin-1", errors="replace")
-
-
 def _normalize(s: str) -> str:
-    """Remplace les sauts de ligne, collapse les espaces multiples, strip."""
     return " ".join(s.replace("\n", " ").split())
 
 
 def _find_col(header: list, *names: str):
-    """Recherche un index de colonne par nom exact (insensible à la casse)."""
     for name in names:
         for i, h in enumerate(header):
             if _normalize(h).lower() == name.lower():
@@ -51,12 +44,10 @@ def _parse_date(val: str):
             return (datetime(1899, 12, 30) + timedelta(days=serial)).date()
     except ValueError:
         pass
-    # Format DD/MM/YYYY
     try:
         return datetime.strptime(val, "%d/%m/%Y").date()
     except ValueError:
         pass
-    # Format YYYY-MM-DD
     try:
         return datetime.strptime(val, "%Y-%m-%d").date()
     except ValueError:
@@ -71,8 +62,6 @@ def import_init(db: Session, content: bytes, nom_fichier: str) -> dict:
     texte = _decoder(content)
     reader = csv.reader(io.StringIO(texte), delimiter=";")
 
-    # La première ligne est l'en-tête (peut s'étaler sur plusieurs lignes physiques
-    # à cause des champs multi-lignes entre guillemets — csv.reader gère ça)
     try:
         header_raw = next(reader)
     except StopIteration:
@@ -81,14 +70,12 @@ def import_init(db: Session, content: bytes, nom_fichier: str) -> dict:
 
     header = [_normalize(h) for h in header_raw]
 
-    # Localisation des colonnes
     idx_code         = _find_col(header, "Ref. Aha Master feature")
     idx_macro        = _find_col(header, "Macro Chiffrage")
     idx_chiffrage_ed = _find_col(header, "Chiffrage Edition")
     idx_raf_dev      = _find_col(header, "RAF DEV M")
     idx_raf_cvg      = _find_col(header, "RAF CVG M")
     idx_conso_2025   = _find_col(header, "Conso 2025")
-    # Colonnes étapes
     idx_date_pm      = _find_col(header, "date prévisionnelle presentation fiche initiatitive (PM)",
                                          "date prévisionnelle presentation fiche initiative (PM)")
     idx_date_po      = _find_col(header, "date prévisionnelle fin instruction PO")
@@ -168,7 +155,6 @@ def import_init(db: Session, content: bytes, nom_fichier: str) -> dict:
             modifie = False
             chiffrage_modifie = False
 
-            # Champs évolution
             if macro is not None:
                 evolution.macro_chiffrage = macro
                 modifie = True
@@ -189,8 +175,6 @@ def import_init(db: Session, content: bytes, nom_fichier: str) -> dict:
                 evolution.conso_2025 = conso_2025
                 modifie = True
 
-            # Champs étapes — etape_nom → {champ: valeur}
-            # pourcentage_avancement : valeur float du CSV (ex: 14,2 → 14%) → arrondi en int
             etapes_updates = {
                 "Analyse PM":            {"date_prevue": date_pm},
                 "Analyse PO":            {"date_prevue": date_po, "responsable": resp_po},
@@ -213,7 +197,6 @@ def import_init(db: Session, content: bytes, nom_fichier: str) -> dict:
                     if valeur is not None:
                         setattr(etape_obj, champ, valeur)
                         modifie = True
-                # Règle statut selon le type d'étape
                 if nom_etape == "Livraison intégration":
                     etape_obj.statut = "Terminé" if etape_obj.date_reelle else "À faire"
                 else:
@@ -234,11 +217,11 @@ def import_init(db: Session, content: bytes, nom_fichier: str) -> dict:
                 nb_ignores += 1
 
         except Exception as e:
+            logger.exception("Erreur traitement ligne init '%s'", code)
             nb_erreurs += 1
             details.append(f"erreur {code} : {e}")
 
-    db.commit()
-
+    # Pas de db.commit() ici — la transaction est gérée par le routeur
     return {
         "nb_crees": 0,
         "nb_mis_a_jour": nb_maj,

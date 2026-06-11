@@ -12,12 +12,12 @@ export default function DashboardGlobal() {
   const [equipes, setEquipes] = useState([])
   const [filtres, setFiltres] = useState({})
 
-  const charger = (params = {}) => api.getDashboardGlobal(params).then(setData)
+  const charger = (params = {}) => api.getDashboardGlobal(params).then(setData).catch(console.error)
 
   useEffect(() => {
     charger()
-    api.getReleases().then(setReleases)
-    api.getEquipes().then(e => setEquipes(e.filter(eq => eq.type_equipe === 'DEV')))
+    api.getReleases().then(setReleases).catch(console.error)
+    api.getEquipes().then(e => setEquipes(e.filter(eq => eq.type_equipe === 'DEV'))).catch(console.error)
   }, [])
 
   const appliquer = (val, cle) => {
@@ -28,7 +28,7 @@ export default function DashboardGlobal() {
 
   if (!data) return null
 
-  const donneesEquipes = Object.keys(data.temps_dev_par_equipe).map(eq => ({
+  const donneesEquipes = Object.keys(data.temps_dev_par_equipe ?? {}).map(eq => ({
     equipe: equipes.find(e => e.code === eq)?.libelle || eq,
     'Temps DEV': data.temps_dev_par_equipe[eq],
     'Budget Aha': data.budget_par_equipe?.[eq] || 0,

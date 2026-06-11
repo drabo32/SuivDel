@@ -63,8 +63,10 @@ function WorkspacesTab() {
   }, [])
 
   const maj = async (workspace, code_equipe) => {
-    await api.updateWorkspace(workspace, code_equipe)
-    message.success('Mis à jour')
+    try {
+      await api.updateWorkspace(workspace, code_equipe)
+      message.success('Mis à jour')
+    } catch (e) { message.error('Erreur lors de la mise à jour') }
   }
 
   const colonnes = [
@@ -101,9 +103,11 @@ function TimeNiv2Tab() {
   }
 
   const supprimer = async (time_niv2) => {
-    await api.deleteTimeNiv2Mapping(time_niv2)
-    message.success('Supprimé')
-    charger()
+    try {
+      await api.deleteTimeNiv2Mapping(time_niv2)
+      message.success('Supprimé')
+      charger()
+    } catch (e) { message.error('Erreur lors de la suppression') }
   }
 
   const colonnes = [

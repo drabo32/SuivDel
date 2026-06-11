@@ -4,14 +4,13 @@ import {
   Card, Descriptions, Form, InputNumber, DatePicker, Button, Table, Tag, Select,
   Typography, Space, Statistic, Row, Col, Collapse, message, Tabs, Input, Modal, Divider, Popconfirm
 } from 'antd'
-import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, SaveOutlined, DeleteOutlined } from '@ant-design/icons'
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer
 } from 'recharts'
 import dayjs from 'dayjs'
 import { api } from '../api/client'
-import { DeleteOutlined } from '@ant-design/icons'
 
 const { Title, Text } = Typography
 
@@ -179,10 +178,10 @@ export default function EvolutionDetail() {
   const [historique, setHistorique] = useState([])
 
   const charger = () => {
-    api.getEvolution(code).then(setEvolution)
-    api.getTempsEvolution(code).then(setTemps)
-    api.getSnapshots(code).then(setSnapshots)
-    api.getHistoriqueEtapes(code).then(setHistorique)
+    api.getEvolution(code).then(setEvolution).catch(console.error)
+    api.getTempsEvolution(code).then(setTemps).catch(console.error)
+    api.getSnapshots(code).then(setSnapshots).catch(console.error)
+    api.getHistoriqueEtapes(code).then(setHistorique).catch(console.error)
   }
 
   useEffect(() => { charger() }, [code])
@@ -255,7 +254,7 @@ export default function EvolutionDetail() {
   return (
     <div>
       <Space style={{ marginBottom: 16 }}>
-        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/evolutions')}>Retour</Button>
+        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>Retour</Button>
         <Title level={3} style={{ margin: 0 }}>{evolution.code} — {evolution.libelle}</Title>
       </Space>
 

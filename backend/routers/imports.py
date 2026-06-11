@@ -46,7 +46,7 @@ async def import_fichier_aha(file: UploadFile = File(...), db: Session = Depends
     except Exception as e:
         logger.exception("Erreur import Aha: %s", e)
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Erreur import Aha : {e}")
+        raise HTTPException(status_code=500, detail="Erreur interne lors de l'import.")
 
 
 @router.post("/changepoint")
@@ -65,7 +65,7 @@ async def import_fichier_changepoint(file: UploadFile = File(...), db: Session =
     except Exception as e:
         logger.exception("Erreur import ChangePoint: %s", e)
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Erreur import ChangePoint : {e}")
+        raise HTTPException(status_code=500, detail="Erreur interne lors de l'import.")
 
 
 @router.post("/init")

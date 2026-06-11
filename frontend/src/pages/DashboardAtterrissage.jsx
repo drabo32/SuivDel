@@ -21,7 +21,7 @@ export default function DashboardAtterrissage() {
     const p = { ...filtres, ...params }
     if (d1) p.date1 = d1
     if (d2) p.date2 = d2
-    api.getDashboardAtterrissage(p).then(setData)
+    api.getDashboardAtterrissage(p).then(setData).catch(console.error)
   }
 
   useEffect(() => {

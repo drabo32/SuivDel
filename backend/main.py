@@ -12,14 +12,11 @@ def run_migrations():
     command.upgrade(cfg, "head")
 
 
-run_migrations()
-
 app = FastAPI(title="Suivi Évolutions", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -33,7 +30,14 @@ app.include_router(admin.router)
 
 
 @app.on_event("startup")
-def seed_donnees_initiales():
+def initialiser():
+    # Migrations Alembic en premier, dans l'event startup (pas au niveau module)
+    run_migrations()
+    _seed_donnees_initiales()
+
+
+def _seed_donnees_initiales():
+    from sqlalchemy.exc import IntegrityError
     from database import SessionLocal
     from models import Equipe, TypeEquipe, WorkspaceMapping, TimeNiv2Mapping, Release
     db = SessionLocal()
@@ -51,7 +55,7 @@ def seed_donnees_initiales():
         for code, libelle, type_eq in equipes:
             existing = db.query(Equipe).filter(Equipe.code == code).first()
             if existing:
-                existing.libelle = libelle  # met à jour le libellé si besoin
+                existing.libelle = libelle
             else:
                 db.add(Equipe(code=code, libelle=libelle, type_equipe=type_eq))
 
@@ -72,7 +76,7 @@ def seed_donnees_initiales():
         for workspace, equipe in workspaces:
             existing = db.query(WorkspaceMapping).filter(WorkspaceMapping.workspace_aha == workspace).first()
             if existing:
-                existing.code_equipe = equipe  # met à jour si le mapping a changé
+                existing.code_equipe = equipe
             else:
                 db.add(WorkspaceMapping(workspace_aha=workspace, code_equipe=equipe))
 
@@ -110,7 +114,11 @@ def seed_donnees_initiales():
             else:
                 db.add(Release(code=code, libelle=libelle, version=version, mois=mois, annee=annee))
 
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            # Race condition entre workers : un autre worker a déjà seedé — ignorer
+            db.rollback()
     finally:
         db.close()
 

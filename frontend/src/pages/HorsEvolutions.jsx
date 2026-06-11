@@ -1,14 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Card, Table, Select, Space, Typography, InputNumber, message } from 'antd'
 import { api } from '../api/client'
+import { MOIS_LABELS, formatMoisKey } from '../utils'
 
 const { Title, Text } = Typography
-const MOIS_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
-
-const formatMoisKey = (moisKey) => {
-  const [annee, mois] = moisKey.split('-')
-  return `${MOIS_LABELS[parseInt(mois) - 1]} ${annee.slice(2)}`
-}
 
 /** Extrait les clés de mois depuis le tableau pré-pivoté renvoyé par l'API */
 function getMoisFromTableau(tableau) {
@@ -53,12 +48,12 @@ export default function HorsEvolutions() {
       const initRaf = {}
       ;(d.tableau || []).forEach(r => { initRaf[r.key] = r.raf ?? 0 })
       setRafEdits(initRaf)
-    })
+    }).catch(console.error)
   }
 
   useEffect(() => {
     charger()
-    api.getEquipes().then(setEquipes)
+    api.getEquipes().then(setEquipes).catch(console.error)
   }, [])
 
   const appliquer = (val, cle) => {

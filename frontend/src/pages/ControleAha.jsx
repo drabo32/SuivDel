@@ -3,23 +3,16 @@ import { Card, Table, Tag, Typography, Alert, Badge, Space } from 'antd'
 import { WarningOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
+import { formatMoisKey } from '../utils'
 
 const { Title, Text } = Typography
-
-const MOIS_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
-
-const formatMoisKey = (k) => {
-  if (!k) return '—'
-  const [annee, mois] = k.split('-')
-  return `${MOIS_LABELS[parseInt(mois) - 1]} ${annee.slice(2)}`
-}
 
 export default function ControleAha() {
   const [data, setData] = useState(null)
   const navigate = useNavigate()
 
   useEffect(() => {
-    api.getControleAha().then(setData)
+    api.getControleAha().then(setData).catch(console.error)
   }, [])
 
   const colonnes = [

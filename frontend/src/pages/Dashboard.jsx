@@ -9,14 +9,12 @@ import {
 } from 'recharts'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
+import { MOIS_LABELS, formatJ, formatMoisKey } from '../utils'
 
 const { Title } = Typography
 
 const COULEUR_STATUT = { 'À faire': '#d9d9d9', 'En cours': '#1677ff', 'Terminé': '#52c41a' }
 const COULEURS_PIE = ['#d9d9d9', '#1677ff', '#52c41a']
-const MOIS_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
-const formatJ = v => v != null ? Number(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'
-const formatMoisKey = k => { const [a, m] = k.split('-'); return `${MOIS_LABELS[parseInt(m) - 1]} ${a.slice(2)}` }
 
 function BarreStatuts({ data, titre }) {
   const donneesChart = Object.entries(data).map(([eq, v]) => ({ equipe: eq, ...v }))
@@ -49,8 +47,8 @@ export default function Dashboard() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    api.getEquipes().then(e => setEquipes(e.filter(eq => eq.type_equipe === 'DEV')))
-    api.getReleases().then(setReleases)
+    api.getEquipes().then(e => setEquipes(e.filter(eq => eq.type_equipe === 'DEV'))).catch(console.error)
+    api.getReleases().then(setReleases).catch(console.error)
     charger(null, null)
   }, [])
 
@@ -63,7 +61,7 @@ export default function Dashboard() {
       const initRaf = {}
       ;(d.hors_evol_taches || []).forEach(t => { initRaf[t.key] = t.raf ?? 0 })
       setRafEdits(initRaf)
-    })
+    }).catch(console.error)
   }
 
   const sauvegarderRaf = (row, valeur) => {
@@ -174,7 +172,9 @@ export default function Dashboard() {
   }))
   const chartHeight = Math.max(300, evolutions.length * 28)
 
-  const donneesPie = data ? Object.entries(data.recette_interne).filter(([, v]) => v > 0).map(([n, v]) => ({ name: n, value: v })) : []
+  const donneesPie = data
+    ? Object.entries(data.recette_interne ?? {}).filter(([, v]) => v > 0).map(([n, v]) => ({ name: n, value: v }))
+    : []
 
   return (
     <div>

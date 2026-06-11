@@ -38,7 +38,7 @@ export default function Evolutions() {
 
   const donneesFiltrees = evolutions.filter(e =>
     !recherche || e.code.toLowerCase().includes(recherche.toLowerCase()) ||
-    e.libelle.toLowerCase().includes(recherche.toLowerCase())
+    (e.libelle || '').toLowerCase().includes(recherche.toLowerCase())
   )
 
   const colonnes = [

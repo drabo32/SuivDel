@@ -1,20 +1,27 @@
 import csv
 import io
+import logging
 import re
 from sqlalchemy.orm import Session
 from models import TempsConsomme, TacheHorsEvolution, TimeNiv2Mapping, TypeEquipe
+from services.utils import decoder as _decoder
+
+logger = logging.getLogger(__name__)
 
 CODE_AHA_PATTERN = re.compile(r"([A-Z]+-E-\d+)")
 TIME_NIV0_EDITION = "03-Edition"
 
-
-def _decoder(content: bytes) -> str:
-    for encoding in ("utf-8-sig", "utf-8", "latin-1", "cp1252"):
-        try:
-            return content.decode(encoding)
-        except UnicodeDecodeError:
-            continue
-    return content.decode("latin-1", errors="replace")
+# Liste complète des étapes — identique à import_aha pour cohérence
+_ETAPES_VALEURS = [
+    "Analyse PM",
+    "Analyse PO",
+    "Analyse PPO",
+    "Développement",
+    "Recette interne",
+    "Livraison intégration",
+    "Recette Pôle Testing",
+]
+_STATUT_A_FAIRE = "À faire"
 
 
 def _extraire_annee_mois(annee_raw, mois_raw, time_date):
@@ -40,7 +47,16 @@ def import_changepoint(db: Session, content: bytes, nom_fichier: str) -> dict:
     niv2_map = {m.time_niv2: m for m in db.query(TimeNiv2Mapping).all()}
 
     texte = _decoder(content)
-    reader = csv.DictReader(io.StringIO(texte), delimiter=";")
+
+    # Détection automatique du séparateur (même robustesse que import_aha)
+    sample = texte[:4096]
+    try:
+        dialect = csv.Sniffer().sniff(sample, delimiters=";,")
+        delimiter = dialect.delimiter
+    except csv.Error:
+        delimiter = ";"
+
+    reader = csv.DictReader(io.StringIO(texte), delimiter=delimiter)
 
     cumul_evolutions: dict = {}
     cumul_hors_evol: dict = {}
@@ -104,7 +120,8 @@ def import_changepoint(db: Session, content: bytes, nom_fichier: str) -> dict:
             else:
                 nb_ignores += 1
 
-        except Exception as e:
+        except Exception:
+            logger.exception("Erreur traitement ligne ChangePoint")
             nb_erreurs += 1
 
     nb_crees_squelettes, codes_traites = _upsert_evolutions(db, cumul_evolutions, codes_non_reconnus)
@@ -114,13 +131,13 @@ def import_changepoint(db: Session, content: bytes, nom_fichier: str) -> dict:
     if codes_traites:
         from services.snapshot_service import creer_snapshot_auto
         from models import Evolution
+        db.flush()  # garantit que les nouveaux TempsConsomme sont visibles pour le snapshot
         for code_aha in codes_traites:
             evol = db.query(Evolution).filter(Evolution.code == code_aha).first()
             if evol:
                 creer_snapshot_auto(db, evol)
 
-    db.commit()
-
+    # Pas de db.commit() ici — la transaction est gérée par le routeur
     lignes_detail = []
     if codes_non_reconnus:
         lignes_detail.append("Codes évolution non reconnus / squelettes créés:\n" + "\n".join(sorted(codes_non_reconnus)))
@@ -134,17 +151,6 @@ def import_changepoint(db: Session, content: bytes, nom_fichier: str) -> dict:
         "nb_erreurs": nb_erreurs,
         "detail": "\n\n".join(lignes_detail) if lignes_detail else None,
     }
-
-
-# Valeurs brutes correspondant aux enums PostgreSQL — on évite tout objet enum Python
-_ETAPES_VALEURS = [
-    "Analyse PO",
-    "Développement",
-    "Recette interne",
-    "Livraison intégration",
-    "Recette Pôle Testing",
-]
-_STATUT_A_FAIRE = "À faire"
 
 
 def _upsert_evolutions(db: Session, cumul: dict, codes_non_reconnus: set) -> tuple:
@@ -165,7 +171,6 @@ def _upsert_evolutions(db: Session, cumul: dict, codes_non_reconnus: set) -> tup
                 )
                 continue
 
-            # Création d'un squelette d'évolution avec savepoint
             sp = db.begin_nested()
             try:
                 evol = Evolution(
@@ -195,7 +200,6 @@ def _upsert_evolutions(db: Session, cumul: dict, codes_non_reconnus: set) -> tup
                 continue
 
         if not evol:
-            # Squelette déjà créé dans ce batch — recharger depuis la base
             evol = db.query(Evolution).filter(Evolution.code == code_aha).first()
             if not evol:
                 continue

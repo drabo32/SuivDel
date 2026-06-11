@@ -3,16 +3,11 @@ import { Card, Select, Table, Tag, Row, Col, Typography, Space, Statistic, Colla
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
+import { MOIS_LABELS, formatMoisKey } from '../utils'
 
 const { Title } = Typography
 const COULEUR_STATUT = { 'À faire': '#d9d9d9', 'En cours': '#1677ff', 'Terminé': '#52c41a' }
 const COULEURS_PIE = ['#d9d9d9', '#1677ff', '#52c41a', '#f5222d']
-const MOIS_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
-
-const formatMoisKey = (k) => {
-  const [annee, mois] = k.split('-')
-  return `${MOIS_LABELS[parseInt(mois) - 1]} ${annee.slice(2)}`
-}
 
 export default function DashboardEquipe() {
   const [equipes, setEquipes] = useState([])
@@ -24,8 +19,8 @@ export default function DashboardEquipe() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    api.getEquipes().then(e => setEquipes(e.filter(eq => eq.type_equipe === 'DEV')))
-    api.getReleases().then(setReleases)
+    api.getEquipes().then(e => setEquipes(e.filter(eq => eq.type_equipe === 'DEV'))).catch(console.error)
+    api.getReleases().then(setReleases).catch(console.error)
   }, [])
 
   const charger = (eq, rel) => {
@@ -38,7 +33,7 @@ export default function DashboardEquipe() {
       const initRaf = {}
       ;(d.hors_evol_taches || []).forEach(t => { initRaf[t.key] = t.raf ?? 0 })
       setRafEdits(initRaf)
-    })
+    }).catch(console.error)
   }
 
   const sauvegarderRaf = (row, valeur) => {

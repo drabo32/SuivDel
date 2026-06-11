@@ -1,8 +1,12 @@
 import csv
 import io
+import logging
 from datetime import date, datetime, timedelta
 from sqlalchemy.orm import Session
 from models import Evolution, Release, WorkspaceMapping, EtapeCycleVie
+from services.utils import decoder as _decoder
+
+logger = logging.getLogger(__name__)
 
 # Valeurs brutes correspondant aux enums PostgreSQL — on évite tout objet enum Python
 _ETAPES_VALEURS = [
@@ -36,15 +40,6 @@ def _parse_date(val: str):
         except ValueError:
             pass
     return None
-
-
-def _decoder(content: bytes) -> str:
-    for encoding in ("utf-8-sig", "utf-8", "latin-1", "cp1252"):
-        try:
-            return content.decode(encoding)
-        except (UnicodeDecodeError, ValueError):
-            continue
-    return content.decode("latin-1", errors="replace")
 
 
 def import_aha(db: Session, content: bytes, nom_fichier: str) -> dict:
@@ -183,7 +178,6 @@ def import_aha(db: Session, content: bytes, nom_fichier: str) -> dict:
             # --- Calcul des diffs de release ---
             if evolution_existed:
                 if old_release != code_release:
-                    # L'évolution a changé de release (ou acquis/perdu une release)
                     if old_release:
                         diffs.append({
                             "code_release": old_release,
@@ -199,7 +193,6 @@ def import_aha(db: Session, content: bytes, nom_fichier: str) -> dict:
                             "type_diff": "AJOUT",
                         })
                 elif code_release and old_statut != statut_aha:
-                    # Même release, statut Aha a changé
                     diffs.append({
                         "code_release": code_release,
                         "evolution_code": code,
@@ -209,7 +202,6 @@ def import_aha(db: Session, content: bytes, nom_fichier: str) -> dict:
                         "nouvelle_valeur": statut_aha,
                     })
             else:
-                # Nouvelle évolution — premier rattachement à une release
                 if code_release:
                     diffs.append({
                         "code_release": code_release,
@@ -219,11 +211,11 @@ def import_aha(db: Session, content: bytes, nom_fichier: str) -> dict:
                     })
 
         except Exception as e:
+            logger.exception("Erreur traitement ligne '%s'", code)
             nb_erreurs += 1
             codes_non_reconnus.append(f"erreur ligne '{code}': {e}")
 
-    db.commit()
-
+    # Pas de db.commit() ici — la transaction est gérée par le routeur
     detail = "\n".join(codes_non_reconnus) if codes_non_reconnus else None
     return {
         "nb_crees": nb_crees,

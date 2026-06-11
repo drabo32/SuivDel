@@ -17,7 +17,7 @@ export default function DashboardTesting() {
   const [filtreLivree, setFiltreLivree] = useState(null) // 'oui' | 'non' | null
   const navigate = useNavigate()
 
-  const charger = (params = {}) => api.getDashboardTesting(params).then(setData)
+  const charger = (params = {}) => api.getDashboardTesting(params).then(setData).catch(console.error)
 
   useEffect(() => {
     charger()

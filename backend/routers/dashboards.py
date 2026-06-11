@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Optional, List
@@ -302,8 +302,11 @@ def dashboard_atterrissage(
     db: Session = Depends(get_db),
 ):
     from datetime import datetime
-    dt1 = datetime.strptime(date1, "%Y-%m-%d") if date1 else datetime.utcnow()
-    dt2 = datetime.strptime(date2, "%Y-%m-%d") if date2 else None
+    try:
+        dt1 = datetime.strptime(date1, "%Y-%m-%d") if date1 else datetime.utcnow()
+        dt2 = datetime.strptime(date2, "%Y-%m-%d") if date2 else None
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Format de date invalide, attendu YYYY-MM-DD")
 
     releases_map = {r.code: f"{r.version} — {r.libelle}" for r in db.query(Release).all()}
 
