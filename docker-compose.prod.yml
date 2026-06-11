@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: suivi_evolutions
+      POSTGRES_USER: suivi
+      POSTGRES_PASSWORD: suivi2026
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U suivi -d suivi_evolutions"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: drabo32/suivdel-backend:latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://suivi:suivi2026@db:5432/suivi_evolutions
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    image: drabo32/suivdel-frontend:latest
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
