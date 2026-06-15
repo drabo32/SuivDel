@@ -165,6 +165,7 @@ export default function Dashboard() {
 
   const donneesChart = evolutions.map(e => ({
     code: e.code,
+    libelle: e.libelle || '',
     'Budget': e.budget || 0,
     'Chiff. édition': e.chiffrage_edition || 0,
     'Consommé': e.consomme_total || 0,
@@ -233,7 +234,10 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" tick={{ fontSize: 11 }} unit=" j" />
                   <YAxis type="category" dataKey="code" tick={{ fontSize: 11 }} width={85} />
-                  <Tooltip formatter={(v, n) => [`${Number(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} j`, n]} />
+                  <Tooltip
+                    labelFormatter={(code, payload) => payload?.[0]?.payload?.libelle ? `${code} — ${payload[0].payload.libelle}` : code}
+                    formatter={(v, n) => [`${Number(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} j`, n]}
+                  />
                   <Legend />
                   <Bar dataKey="Budget" fill="#722ed1" barSize={7} />
                   <Bar dataKey="Chiff. édition" fill="#1677ff" barSize={7} />
