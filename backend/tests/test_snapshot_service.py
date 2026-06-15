@@ -27,6 +27,7 @@ class TestCreerSnapshotAuto:
         db.flush()
 
         creer_snapshot_auto(db, evol)
+        db.flush()
 
         snap = db.query(SnapshotAtterrissage).filter_by(evolution_code="ASD-E-001").first()
         assert snap is not None
@@ -65,6 +66,7 @@ class TestCreerSnapshotAuto:
         db.flush()
 
         creer_snapshot_auto(db, evol)
+        db.flush()
 
         snap = db.query(SnapshotAtterrissage).filter_by(evolution_code="ASD-E-002").first()
         assert snap.temps_dev_consomme == 4.0
@@ -85,6 +87,7 @@ class TestCreerSnapshotAuto:
         db.flush()
 
         creer_snapshot_auto(db, evol)
+        db.flush()
 
         snap = db.query(SnapshotAtterrissage).filter_by(evolution_code="ASD-E-003").first()
         assert snap is not None
@@ -114,6 +117,7 @@ class TestCreerSnapshotAuto:
         db.flush()
 
         creer_snapshot_auto(db, evol)
+        db.flush()
 
         snap = db.query(SnapshotAtterrissage).filter_by(evolution_code="ASD-E-004").first()
         assert snap.temps_dev_consomme == 5.0

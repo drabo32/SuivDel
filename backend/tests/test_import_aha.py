@@ -62,6 +62,7 @@ class TestImportAha:
 
         assert result["nb_mis_a_jour"] == 1
         assert result["nb_crees"] == 0
+        db.flush()
         db.refresh(evol)
         assert evol.libelle == "Nouveau libellé"
         assert evol.statut_aha == "En cours"

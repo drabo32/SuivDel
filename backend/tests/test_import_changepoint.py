@@ -66,6 +66,7 @@ class TestImportChangepoint:
         )
         import_changepoint(db, csv, "test.csv")
 
+        db.flush()
         tache = db.query(TacheHorsEvolution).filter_by(
             time_niv2="NIV2_HORS", annee=2025, mois=2
         ).first()

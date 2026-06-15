@@ -77,10 +77,10 @@ class TestParseDate:
         assert _parse_date("15/01/2025") == date(2025, 1, 15)
 
     def test_excel_serial(self):
-        # Série Excel 45028 = 2023-04-25
+        # Série Excel 45028 = 2023-04-12 (vérifié via datetime(1899,12,30)+timedelta(45028))
         result = _parse_date("45028")
         assert isinstance(result, date)
-        assert result == date(2023, 4, 25)
+        assert result == date(2023, 4, 12)
 
     def test_excel_serial_small_ignored(self):
         # Valeur <= 1000 n'est pas traitée comme série Excel → None
