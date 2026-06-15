@@ -16,10 +16,10 @@ const { Title } = Typography
 const COULEUR_STATUT = { 'À faire': '#d9d9d9', 'En cours': '#1677ff', 'Terminé': '#52c41a' }
 const COULEURS_PIE = ['#d9d9d9', '#1677ff', '#52c41a']
 
-function TooltipBudget({ active, payload }) {
+function TooltipBudget({ active, payload, label, libelleMap }) {
   if (!active || !payload?.length) return null
-  const item = payload[0]?.payload || {}
-  const titre = item.libelle ? `${item.code} — ${item.libelle}` : item.code
+  const libelle = libelleMap?.[label] || ''
+  const titre = libelle ? `${label} — ${libelle}` : label
   return (
     <div style={{ background: '#fff', border: '1px solid #d9d9d9', padding: '8px 12px', borderRadius: 4, fontSize: 12 }}>
       <p style={{ margin: '0 0 6px', fontWeight: 600 }}>{titre}</p>
@@ -179,9 +179,13 @@ export default function Dashboard() {
   const totalRafEvol = evolutions.reduce((a, e) => a + (e.raf_total || 0), 0)
   const totalRafGlobal = totalRafEvol + (data?.hors_evol_raf_total || 0)
 
+  const libelleMap = useMemo(
+    () => Object.fromEntries(evolutions.map(e => [e.code, e.libelle || ''])),
+    [evolutions]
+  )
+
   const donneesChart = evolutions.map(e => ({
     code: e.code,
-    libelle: e.libelle || '',
     'Budget': e.budget || 0,
     'Chiff. édition': e.chiffrage_edition || 0,
     'Consommé': e.consomme_total || 0,
@@ -249,7 +253,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" tick={{ fontSize: 11 }} unit=" j" />
                 <YAxis type="category" dataKey="code" tick={{ fontSize: 11 }} width={85} />
-                <Tooltip content={<TooltipBudget />} />
+                <Tooltip content={(props) => <TooltipBudget {...props} libelleMap={libelleMap} />} />
                 <Legend />
                 <Bar dataKey="Budget" fill="#722ed1" barSize={7} />
                 <Bar dataKey="Chiff. édition" fill="#1677ff" barSize={7} />
