@@ -16,6 +16,21 @@ const { Title } = Typography
 const COULEUR_STATUT = { 'À faire': '#d9d9d9', 'En cours': '#1677ff', 'Terminé': '#52c41a' }
 const COULEURS_PIE = ['#d9d9d9', '#1677ff', '#52c41a']
 
+function TooltipBudget({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+  const libelle = payload[0]?.payload?.libelle
+  return (
+    <div style={{ background: '#fff', border: '1px solid #d9d9d9', padding: '8px 12px', borderRadius: 4, fontSize: 12 }}>
+      <p style={{ margin: '0 0 6px', fontWeight: 600 }}>{libelle ? `${label} — ${libelle}` : label}</p>
+      {payload.map((p, i) => (
+        <p key={i} style={{ margin: '2px 0', color: p.fill }}>
+          {p.name} : {Number(p.value).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} j
+        </p>
+      ))}
+    </div>
+  )
+}
+
 function BarreStatuts({ data, titre }) {
   const donneesChart = Object.entries(data).map(([eq, v]) => ({ equipe: eq, ...v }))
   if (!donneesChart.length) return null
@@ -234,10 +249,7 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" tick={{ fontSize: 11 }} unit=" j" />
                   <YAxis type="category" dataKey="code" tick={{ fontSize: 11 }} width={85} />
-                  <Tooltip
-                    labelFormatter={(code, payload) => payload?.[0]?.payload?.libelle ? `${code} — ${payload[0].payload.libelle}` : code}
-                    formatter={(v, n) => [`${Number(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} j`, n]}
-                  />
+                  <Tooltip content={<TooltipBudget />} />
                   <Legend />
                   <Bar dataKey="Budget" fill="#722ed1" barSize={7} />
                   <Bar dataKey="Chiff. édition" fill="#1677ff" barSize={7} />
