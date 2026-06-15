@@ -16,12 +16,13 @@ const { Title } = Typography
 const COULEUR_STATUT = { 'À faire': '#d9d9d9', 'En cours': '#1677ff', 'Terminé': '#52c41a' }
 const COULEURS_PIE = ['#d9d9d9', '#1677ff', '#52c41a']
 
-function TooltipBudget({ active, payload, label }) {
+function TooltipBudget({ active, payload }) {
   if (!active || !payload?.length) return null
-  const libelle = payload[0]?.payload?.libelle
+  const item = payload[0]?.payload || {}
+  const titre = item.libelle ? `${item.code} — ${item.libelle}` : item.code
   return (
     <div style={{ background: '#fff', border: '1px solid #d9d9d9', padding: '8px 12px', borderRadius: 4, fontSize: 12 }}>
-      <p style={{ margin: '0 0 6px', fontWeight: 600 }}>{libelle ? `${label} — ${libelle}` : label}</p>
+      <p style={{ margin: '0 0 6px', fontWeight: 600 }}>{titre}</p>
       {payload.map((p, i) => (
         <p key={i} style={{ margin: '2px 0', color: p.fill }}>
           {p.name} : {Number(p.value).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} j
