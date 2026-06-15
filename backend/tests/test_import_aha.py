@@ -21,9 +21,10 @@ def setup_equipe_ws(db):
 
 
 class TestImportAha:
-    def test_empty_bytes_returns_erreur(self, db):
+    def test_empty_bytes_returns_zero(self, db):
         result = import_aha(db, b"", "test.csv")
-        assert result["nb_erreurs"] >= 1
+        assert result["nb_crees"] == 0
+        assert result["nb_mis_a_jour"] == 0
 
     def test_unknown_workspace_ignores_row(self, db):
         csv = csv_bytes("ASD-E-001,Mon évolution,Workspace Inconnu,,En cours,,,")
