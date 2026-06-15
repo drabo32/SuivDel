@@ -243,21 +243,19 @@ export default function Dashboard() {
 
           {/* Graphique par évolution */}
           <Card title={`Budget / Atterrissage par évolution (${evolutions.length})`} style={{ marginBottom: 16 }}>
-            <div style={{ overflowY: 'auto', maxHeight: 420 }}>
-              <ResponsiveContainer width="100%" height={chartHeight}>
-                <BarChart data={donneesChart} layout="vertical" margin={{ left: 90, right: 20, top: 5, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" tick={{ fontSize: 11 }} unit=" j" />
-                  <YAxis type="category" dataKey="code" tick={{ fontSize: 11 }} width={85} />
-                  <Tooltip content={<TooltipBudget />} />
-                  <Legend />
-                  <Bar dataKey="Budget" fill="#722ed1" barSize={7} />
-                  <Bar dataKey="Chiff. édition" fill="#1677ff" barSize={7} />
-                  <Bar dataKey="Consommé" fill="#52c41a" barSize={7} stackId="att" />
-                  <Bar dataKey="RAF" fill="#fa8c16" barSize={7} stackId="att" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <ResponsiveContainer width="100%" height={chartHeight}>
+              <BarChart data={donneesChart} layout="vertical" margin={{ left: 90, right: 20, top: 5, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" tick={{ fontSize: 11 }} unit=" j" />
+                <YAxis type="category" dataKey="code" tick={{ fontSize: 11 }} width={85} />
+                <Tooltip content={<TooltipBudget />} />
+                <Legend />
+                <Bar dataKey="Budget" fill="#722ed1" barSize={7} />
+                <Bar dataKey="Chiff. édition" fill="#1677ff" barSize={7} />
+                <Bar dataKey="Consommé" fill="#52c41a" barSize={7} stackId="att" />
+                <Bar dataKey="RAF" fill="#fa8c16" barSize={7} stackId="att" />
+              </BarChart>
+            </ResponsiveContainer>
           </Card>
 
           {/* Tableau évolutions */}
